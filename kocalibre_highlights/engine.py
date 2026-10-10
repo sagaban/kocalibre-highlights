@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from . import luatable
 from .column import annotations_from_column
 from .device import DeviceError, KOReaderSSH
+from .metadata import FIELDS, changes_for_book, check_columns, koreader_values
 from .positions import Book
 from .sync import (IMPORT_DEVICE_ID, BookSync, apply_koreader_import, state_from_json,
                    state_to_json, utc_to_ko)
@@ -19,7 +20,8 @@ SIDES = {'calibre': 'calibre', 'koreader': 'KOReader'}
 
 
 class StateStore:
-    '''Per library sync state: book uuid -> list of synced highlight keys'''
+    '''Per library sync state, by book uuid: the highlight keys synced last time
+    and the KOReader book data (status, rating, review) seen last time.'''
 
     def __init__(self, base_dir, library_id):
         self.dir = os.path.join(base_dir, 'state')
@@ -27,15 +29,24 @@ class StateStore:
         self.path = os.path.join(self.dir, f'{library_id}.json')
         try:
             with open(self.path, encoding='utf-8') as f:
-                self.data = json.load(f)
+                data = json.load(f)
         except (OSError, ValueError):
-            self.data = {}
+            data = {}
+        if data and 'version' not in data:
+            data = {'highlights': data}  # version 1 only had highlights, at the top level
+        self.data = {'version': 2, 'highlights': data.get('highlights', {}), 'metadata': data.get('metadata', {})}
 
     def get(self, book_uuid):
-        return state_from_json(self.data.get(book_uuid))
+        return state_from_json(self.data['highlights'].get(book_uuid))
 
     def set(self, book_uuid, state):
-        self.data[book_uuid] = state_to_json(state)
+        self.data['highlights'][book_uuid] = state_to_json(state)
+
+    def get_metadata(self, book_uuid):
+        return self.data['metadata'].get(book_uuid)
+
+    def set_metadata(self, book_uuid, values):
+        self.data['metadata'][book_uuid] = values
 
     def save(self):
         tmp = self.path + '.tmp'
@@ -76,6 +87,7 @@ class Report:
         self.books = []    # (title, source, Counter of (action, side))
         self.errors = []   # (title, message)
         self.skipped = []  # (title, reason)
+        self.metadata = []  # (title, {column: new value})
         self.device = None
 
     def totals(self):
@@ -96,6 +108,8 @@ class Report:
                 lines.append(f'  {SIDES[side]}: ' + ', '.join(parts))
         if not any(t.values()):
             lines.append('  Todo estaba sincronizado')
+        if self.metadata:
+            lines.append(f'Leído / calificación / reseña: {len(self.metadata)} libros actualizados en calibre')
         if self.skipped:
             lines.append(f'Omitidos: {len(self.skipped)} libros')
         if self.errors:
@@ -108,11 +122,19 @@ class Report:
             if any(counts.values()):
                 out.append(f'{title} [{source}]: ' + ', '.join(
                     f'{n} {ACTIONS[a]} en {SIDES[s]}' for (a, s), n in sorted(counts.items())))
+        for title, changes in self.metadata:
+            out.append(f'{title}: ' + ', '.join(f'{col} = {_short(v)}' for col, v in changes.items()))
         for title, msg in self.errors:
             out.append(f'ERROR {title}: {msg}')
         for title, reason in self.skipped:
             out.append(f'Omitido {title}: {reason}')
         return '\n'.join(out)
+
+
+def _short(v):
+    if isinstance(v, str) and len(v) > 40:
+        return repr(v[:40] + '…')
+    return repr(v)
 
 
 def calibre_highlights(db, book_id):
@@ -166,11 +188,15 @@ class SyncEngine:
         offset = dev.utc_offset()
         roots = self.prefs.get('book_roots') or ['/mnt/us/books', '/mnt/us/documents']
         books = dev.scan(roots)
+        open_books = dev.open_books()
         self.report.device = f'{host} ({len(books)} libros con datos de KOReader)'
         self.log(f'Found {len(books)} books with KOReader data on {host}')
         wanted = set(book_ids) if book_ids is not None else None
         synced = set()
         ko_now = utc_to_ko(datetime.now(timezone.utc), offset)
+        meta_columns, errors = check_columns(self.db.field_metadata, self.prefs)
+        self.report.errors.extend(('Configuración', e) for e in errors)
+        meta_changes = {}  # column -> {book_id: value}
         for dbook in books.values():
             book_id = self.db.lookup_by_uuid(dbook.calibre_uuid) if dbook.calibre_uuid else None
             if book_id is None:
@@ -179,16 +205,39 @@ class SyncEngine:
                 continue
             if wanted is not None and book_id not in wanted:
                 continue
+            title = self.db.field_for('title', book_id)
+            if dbook.path in open_books:
+                self.report.skipped.append((title, 'está abierto en KOReader: cerralo y volvé a sincronizar'))
+                continue
+            if meta_columns:
+                self.sync_book_metadata(dbook, book_id, title, meta_columns, meta_changes)
             if not dbook.path.lower().endswith('.epub'):
                 continue
-            title = self.db.field_for('title', book_id)
             try:
                 if self.sync_device_book(dev, dbook, book_id, title, offset, ko_now):
                     synced.add(book_id)
             except Exception as e:
                 import traceback
                 self.report.errors.append((title, f'{e}\n{traceback.format_exc()}'))
+        if not self.dry_run:
+            for col, vals in meta_changes.items():
+                self.db.set_field(col, vals)
         return synced
+
+    def sync_book_metadata(self, dbook, book_id, title, columns, pending):
+        '''Status, rating and review from the sidecar to calibre columns'''
+        book_uuid = self.db.field_for('uuid', book_id)
+        values = koreader_values(dbook.sidecar)
+        current = {setting: self.db.field_for(col, book_id) for setting, col in columns.items()}
+        changes = changes_for_book(values, self.state.get_metadata(book_uuid), current)
+        if changes:
+            self.report.metadata.append((title, {columns[k]: v for k, v in changes.items()}))
+            if not self.dry_run:
+                self.backup.write(f'{book_id}-metadata.json', json.dumps(
+                    {columns[k]: v for k, v in current.items()}, ensure_ascii=False, default=str))
+            for setting, v in changes.items():
+                pending.setdefault(columns[setting], {})[book_id] = v
+        self.state.set_metadata(book_uuid, {k: values[k] for k in FIELDS})
 
     def sync_device_book(self, dev, dbook, book_id, title, offset, ko_now):
         path = self.db.format_abspath(book_id, FORMAT)

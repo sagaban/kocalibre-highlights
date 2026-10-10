@@ -18,6 +18,24 @@ prefs.defaults['notify_auto_sync'] = True
 prefs.defaults['use_column_fallback'] = True
 prefs.defaults['column'] = '#ko_bookmarks'
 
+
+def _koreader_sync_columns():
+    '''Columns configured in the KOReader Sync plugin, used as defaults'''
+    import json
+    try:
+        with open(os.path.join(config_dir, 'plugins', 'KOReader Sync.json'), encoding='utf-8') as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    return {'read_column': c.get('column_status_bool', ''), 'rating_column': c.get('column_rating', ''),
+            'review_column': c.get('column_review', '')}
+
+
+_ks = _koreader_sync_columns()
+prefs.defaults['read_column'] = _ks.get('read_column', '')
+prefs.defaults['rating_column'] = _ks.get('rating_column', '')
+prefs.defaults['review_column'] = _ks.get('review_column', '')
+
 DATA_DIR = os.path.join(config_dir, 'plugins', 'KOReader Highlights Sync data')
 
 
@@ -66,6 +84,21 @@ class ConfigWidget(QWidget):
         self.column = QLineEdit(prefs['column'])
         f2.addRow('C&olumna:', self.column)
         l.addLayout(f2)
+        l.addWidget(QLabel('<p><b>Datos del libro</b> (de KOReader a calibre; vacío = no sincronizar). '
+                           'Solo se escriben cuando cambian en KOReader, así que lo que edites a mano en '
+                           'calibre se mantiene.</p>'))
+        l.itemAt(l.count() - 1).widget().setWordWrap(True)
+        f3 = QFormLayout()
+        self.read_column = QLineEdit(prefs['read_column'])
+        self.read_column.setPlaceholderText('ej. #leido (columna Sí/No)')
+        f3.addRow('Columna de l&eído:', self.read_column)
+        self.rating_column = QLineEdit(prefs['rating_column'])
+        self.rating_column.setPlaceholderText('ej. rating')
+        f3.addRow('Columna de c&alificación:', self.rating_column)
+        self.review_column = QLineEdit(prefs['review_column'])
+        self.review_column.setPlaceholderText('ej. #ko_review (texto largo)')
+        f3.addRow('Columna de &reseña:', self.review_column)
+        l.addLayout(f3)
         l.addStretch(1)
 
     def save_settings(self):
@@ -79,3 +112,6 @@ class ConfigWidget(QWidget):
         prefs['notify_auto_sync'] = self.notify.isChecked()
         prefs['use_column_fallback'] = self.use_column.isChecked()
         prefs['column'] = self.column.text().strip()
+        prefs['read_column'] = self.read_column.text().strip()
+        prefs['rating_column'] = self.rating_column.text().strip()
+        prefs['review_column'] = self.review_column.text().strip()

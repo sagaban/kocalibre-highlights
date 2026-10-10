@@ -185,6 +185,15 @@ class KOReaderSSH:
             books[b.path] = b
         return books
 
+    def open_books(self):
+        '''Books KOReader currently has open. While a book is open, KOReader keeps
+        its annotations in memory (including an import it already consumed) and
+        only writes the sidecar when the book is closed, so its sidecar is stale.'''
+        script = ("for p in /proc/[0-9]*; do grep -q reader.lua $p/cmdline 2>/dev/null || continue; "
+                  "for f in $p/fd/*; do readlink \"$f\"; done; done 2>/dev/null; true")
+        out = self.run(script).decode('utf-8', 'replace')
+        return {line.strip() for line in out.splitlines() if line.startswith('/') and not line.endswith('.cr3')}
+
     def write_file(self, path, data):
         '''Atomically write data (bytes) to path on the device'''
         q = shlex.quote(path)
@@ -211,6 +220,9 @@ class KOReaderFolder(KOReaderSSH):
 
     def run(self, remote_cmd, data=None, timeout=120):
         raise DeviceError('Shell commands are not available on a folder device')
+
+    def open_books(self):
+        return set()  # KOReader is not running while the device is mounted
 
     def check(self):
         if not os.path.isdir(self.mount):

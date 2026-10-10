@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from kocalibre_highlights import luatable  # noqa
 from kocalibre_highlights.column import annotations_from_column  # noqa
+from kocalibre_highlights.metadata import changes_for_book, koreader_values  # noqa
 from kocalibre_highlights.positions import Book  # noqa
 from kocalibre_highlights.styles import calibre_style_to_ko, ko_style_key, ko_to_calibre_style  # noqa
 from kocalibre_highlights.sync import (BookSync, apply_koreader_import, calibre_uuid_for,  # noqa
@@ -159,6 +160,36 @@ class ColumnTests(unittest.TestCase):
         self.assertEqual((a['text'], a['pageno'], a['pos1']), ('Uno, dos: tres', 452, '/b'))
 
 
+class MetadataTests(unittest.TestCase):
+
+    def test_values(self):
+        v = koreader_values({'summary': {'status': 'complete', 'rating': 4, 'note': ' Muy bueno '}})
+        self.assertEqual(v, {'read_column': True, 'rating_column': 8, 'review_column': 'Muy bueno'})
+        v = koreader_values({'summary': {'status': 'reading'}})
+        self.assertEqual(v, {'read_column': False, 'rating_column': None, 'review_column': None})
+        self.assertEqual(koreader_values({}), {'read_column': None, 'rating_column': None, 'review_column': None})
+
+    def test_changes(self):
+        cols = ('read_column', 'rating_column', 'review_column')
+        ko = {'read_column': True, 'rating_column': 8, 'review_column': None}
+        empty = dict.fromkeys(cols)
+        # First sync: write what KOReader has
+        self.assertEqual(changes_for_book(ko, None, empty), {'read_column': True, 'rating_column': 8})
+        # Already equal in calibre (0 rating == no rating)
+        self.assertEqual(changes_for_book(ko, None, {'read_column': True, 'rating_column': 8, 'review_column': ''}), {})
+        # Unchanged in KOReader since last sync: calibre manual edits are kept
+        self.assertEqual(changes_for_book(ko, ko, {'read_column': False, 'rating_column': 2, 'review_column': 'x'}), {})
+        # Changed in KOReader: written
+        ko2 = dict(ko, rating_column=10, review_column='Genial')
+        self.assertEqual(changes_for_book(ko2, ko, {'read_column': False, 'rating_column': 2, 'review_column': None}),
+                         {'rating_column': 10, 'review_column': 'Genial'})
+        # Review removed in KOReader: cleared in calibre
+        self.assertEqual(changes_for_book(ko, ko2, {'read_column': True, 'rating_column': 10, 'review_column': 'Genial'}),
+                         {'rating_column': 8, 'review_column': None})
+        # Only configured columns are considered
+        self.assertEqual(changes_for_book(ko, None, {'rating_column': None}), {'rating_column': 8})
+
+
 P1 = ('/body/DocFragment[2]/body/div/p[1]/text()[1].0', '/body/DocFragment[2]/body/div/p[1]/text()[1].14')
 P2 = ('/body/DocFragment[2]/body/div/p[2]/b/text().3', '/body/DocFragment[2]/body/div/p[2]/b/text().10')
 
@@ -267,7 +298,7 @@ class SyncTests(Base):
 
 def run():
     suite = unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(c)
-                               for c in (PositionTests, LuaTests, StyleTests, ColumnTests, SyncTests))
+                               for c in (PositionTests, LuaTests, StyleTests, ColumnTests, MetadataTests, SyncTests))
     r = unittest.TextTestRunner(verbosity=2).run(suite)
     sys.exit(0 if r.wasSuccessful() else 1)
 

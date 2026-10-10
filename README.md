@@ -4,6 +4,9 @@ Sincroniza en las dos direcciones los highlights y las notas entre **KOReader** 
 calibre** (EPUB). Los highlights de KOReader aparecen como highlights reales al abrir el libro en
 calibre, y los que hacés en calibre aparecen en KOReader.
 
+Además pasa de KOReader a calibre el estado **leído**, la **calificación** y la **reseña** de cada
+libro (reemplaza al plugin KOReader Sync para eso).
+
 ## Instalación
 
 ```sh
@@ -24,6 +27,23 @@ o tu clave pública en `koreader/settings/SSH/authorized_keys`.
   *Importar solo desde la columna* (libros que ya no están en el Kindle).
 
 KOReader aplica los cambios **la próxima vez que abrís el libro** en el Kindle.
+
+Los libros que están **abiertos en KOReader** en el momento de la sync se saltean: mientras un libro
+está abierto, KOReader tiene sus anotaciones en memoria y el sidecar en disco está desactualizado.
+Cerralo (volvé a la biblioteca) y sincronizá de nuevo.
+
+### Leído, calificación y reseña
+
+Se configuran en el plugin las columnas destino (por defecto, las mismas que tenía KOReader Sync):
+
+| KOReader (`summary` del sidecar) | calibre |
+|---|---|
+| estado `complete` / otro | columna Sí/No (ej. `#leido`) |
+| calificación 1–5 estrellas | columna de calificación (ej. `rating`) |
+| reseña | columna de texto largo (ej. `#ko_review`) |
+
+Solo va de KOReader a calibre, y un valor se escribe solo cuando **cambió en KOReader** desde la
+última sync: lo que edites a mano en calibre se mantiene hasta que lo cambies en el Kindle.
 
 ## Cómo funciona
 
