@@ -14,9 +14,20 @@ from .positions import Book
 from .sync import (IMPORT_DEVICE_ID, BookSync, apply_koreader_import, state_from_json,
                    state_to_json, utc_to_ko)
 
+try:
+    load_translations()
+except NameError:
+    pass  # not running as a calibre plugin (tests); calibre-debug provides _()
+
 FORMAT = 'EPUB'
-ACTIONS = {'add': 'agregados', 'update': 'actualizados', 'delete': 'borrados'}
-SIDES = {'calibre': 'calibre', 'koreader': 'KOReader'}
+
+
+def action_name(action):
+    return {'add': _('added'), 'update': _('updated'), 'delete': _('deleted')}[action]
+
+
+def side_name(side):
+    return {'calibre': 'calibre', 'koreader': 'KOReader'}[side]
 
 
 class StateStore:
@@ -100,20 +111,20 @@ class Report:
         t = self.totals()
         lines = []
         if self.device:
-            lines.append(f'Dispositivo: {self.device}')
-        lines.append(f'Libros sincronizados: {len(self.books)}')
+            lines.append(_('Device: {}').format(self.device))
+        lines.append(_('Books synced: {}').format(len(self.books)))
         for side in ('calibre', 'koreader'):
-            parts = [f'{t[(a, side)]} {ACTIONS[a]}' for a in ('add', 'update', 'delete') if t[(a, side)]]
+            parts = [f'{t[(a, side)]} {action_name(a)}' for a in ('add', 'update', 'delete') if t[(a, side)]]
             if parts:
-                lines.append(f'  {SIDES[side]}: ' + ', '.join(parts))
+                lines.append(f'  {side_name(side)}: ' + ', '.join(parts))
         if not any(t.values()):
-            lines.append('  Todo estaba sincronizado')
+            lines.append('  ' + _('Everything was already in sync'))
         if self.metadata:
-            lines.append(f'Leído / calificación / reseña: {len(self.metadata)} libros actualizados en calibre')
+            lines.append(_('Read / rating / review: {} books updated in calibre').format(len(self.metadata)))
         if self.skipped:
-            lines.append(f'Omitidos: {len(self.skipped)} libros')
+            lines.append(_('Skipped: {} books').format(len(self.skipped)))
         if self.errors:
-            lines.append(f'Errores: {len(self.errors)}')
+            lines.append(_('Errors: {}').format(len(self.errors)))
         return '\n'.join(lines)
 
     def details(self):
@@ -121,13 +132,14 @@ class Report:
         for title, source, counts in self.books:
             if any(counts.values()):
                 out.append(f'{title} [{source}]: ' + ', '.join(
-                    f'{n} {ACTIONS[a]} en {SIDES[s]}' for (a, s), n in sorted(counts.items())))
+                    _('{0} {1} in {2}').format(n, action_name(a), side_name(s))
+                    for (a, s), n in sorted(counts.items())))
         for title, changes in self.metadata:
             out.append(f'{title}: ' + ', '.join(f'{col} = {_short(v)}' for col, v in changes.items()))
         for title, msg in self.errors:
-            out.append(f'ERROR {title}: {msg}')
+            out.append(_('ERROR {0}: {1}').format(title, msg))
         for title, reason in self.skipped:
-            out.append(f'Omitido {title}: {reason}')
+            out.append(_('Skipped {0}: {1}').format(title, reason))
         return '\n'.join(out)
 
 
@@ -172,7 +184,7 @@ class SyncEngine:
             try:
                 synced = self.sync_device(host, book_ids)
             except DeviceError as e:
-                self.report.errors.append(('Device', str(e)))
+                self.report.errors.append((_('Device'), str(e)))
         if use_column:
             self.sync_column(book_ids, exclude=synced)
         if not self.dry_run:
@@ -189,25 +201,25 @@ class SyncEngine:
         roots = self.prefs.get('book_roots') or ['/mnt/us/books', '/mnt/us/documents']
         books = dev.scan(roots)
         open_books = dev.open_books()
-        self.report.device = f'{host} ({len(books)} libros con datos de KOReader)'
+        self.report.device = _('{0} ({1} books with KOReader data)').format(host, len(books))
         self.log(f'Found {len(books)} books with KOReader data on {host}')
         wanted = set(book_ids) if book_ids is not None else None
         synced = set()
         ko_now = utc_to_ko(datetime.now(timezone.utc), offset)
         meta_columns, errors = check_columns(self.db.field_metadata, self.prefs)
-        self.report.errors.extend(('Configuración', e) for e in errors)
+        self.report.errors.extend((_('Settings'), e) for e in errors)
         meta_changes = {}  # column -> {book_id: value}
         for dbook in books.values():
             book_id = self.db.lookup_by_uuid(dbook.calibre_uuid) if dbook.calibre_uuid else None
             if book_id is None:
                 if wanted is None and dbook.path.lower().endswith('.epub'):
-                    self.report.skipped.append((dbook.filename, 'no está en esta biblioteca de calibre'))
+                    self.report.skipped.append((dbook.filename, _('not in this calibre library')))
                 continue
             if wanted is not None and book_id not in wanted:
                 continue
             title = self.db.field_for('title', book_id)
             if dbook.path in open_books:
-                self.report.skipped.append((title, 'está abierto en KOReader: cerralo y volvé a sincronizar'))
+                self.report.skipped.append((title, _('open in KOReader: close it and sync again')))
                 continue
             if meta_columns:
                 self.sync_book_metadata(dbook, book_id, title, meta_columns, meta_changes)
@@ -242,7 +254,7 @@ class SyncEngine:
     def sync_device_book(self, dev, dbook, book_id, title, offset, ko_now):
         path = self.db.format_abspath(book_id, FORMAT)
         if not path:
-            self.report.skipped.append((title, 'no tiene formato EPUB en calibre'))
+            self.report.skipped.append((title, _('no EPUB format in calibre')))
             return False
         ko_annots = dbook.annotations
         pending = dbook.pending_import
@@ -297,7 +309,7 @@ class SyncEngine:
                 continue
             path = self.db.format_abspath(book_id, FORMAT)
             if not path:
-                self.report.skipped.append((title, 'no tiene formato EPUB en calibre'))
+                self.report.skipped.append((title, _('no EPUB format in calibre')))
                 continue
             try:
                 book_uuid = self.db.field_for('uuid', book_id)

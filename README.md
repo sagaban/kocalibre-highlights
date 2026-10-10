@@ -9,12 +9,10 @@ ones you make in calibre show up in KOReader.
 It also copies each book's **read status**, **rating** and **review** from KOReader to calibre, so
 it can replace the KOReader Sync plugin for that.
 
-> The plugin's user interface is currently in Spanish.
-
 ## Installation
 
 ```sh
-./build.sh
+./build.sh   # needs msgfmt (GNU gettext) to compile the translations
 ```
 
 Then in calibre: *Preferences → Plugins → Load plugin from file* → `KOReader Highlights Sync.zip`,
@@ -95,6 +93,13 @@ styles named `KOReader <color>`; underline and strikeout ↔ decorations.
 calibre-debug -e tests/test_sync.py
 calibre-debug -e tests/validate_real_data.py -- <folder with sidecars> <calibre library>
 ```
+
+## Translations
+
+The interface is in English, with a Spanish translation; calibre picks the one matching its own
+language. Translations live in `kocalibre_highlights/translations/<lang>.po`. After changing
+user-visible strings, run `./i18n.sh` to update the template and merge it into every `.po`; to add a
+language, copy `messages.pot` to `<lang>.po` and translate it.
 
 ## License
 

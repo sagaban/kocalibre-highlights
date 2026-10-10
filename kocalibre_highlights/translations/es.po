@@ -1,0 +1,275 @@
+# Spanish translation of KOReader Highlights Sync.
+# This file is distributed under the same license as the KOReader Highlights Sync package (GPL v3).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: KOReader Highlights Sync\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 15:13+0200\n"
+"PO-Revision-Date: 2026-10-10 16:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: action.py:38
+msgid "Sync highlights between KOReader and the calibre viewer"
+msgstr "Sincronizar highlights entre KOReader y el visor de calibre"
+
+#: action.py:47
+msgid "Sync all books"
+msgstr "Sincronizar todos los libros"
+
+#: action.py:49
+msgid "Sync selected books"
+msgstr "Sincronizar libros seleccionados"
+
+#: action.py:51
+msgid "Preview sync (change nothing)"
+msgstr "Vista previa (no cambia nada)"
+
+#: action.py:53
+msgid "Import from the KOReader Sync column only"
+msgstr "Importar solo desde la columna de KOReader Sync"
+
+#: action.py:56
+msgid "Open backups folder"
+msgstr "Abrir carpeta de backups"
+
+#: action.py:58
+msgid "Configure"
+msgstr "Configurar"
+
+#: action.py:104
+msgid "No books selected"
+msgstr "No hay libros seleccionados"
+
+#: action.py:104
+msgid "Select the books to sync first"
+msgstr "Seleccioná primero los libros a sincronizar"
+
+#: action.py:116
+msgid "Sync running"
+msgstr "Sincronización en curso"
+
+#: action.py:116
+msgid "A highlights sync is already running"
+msgstr "Ya hay una sincronización de highlights en curso"
+
+#: action.py:125
+msgid "No device"
+msgstr "Sin dispositivo"
+
+#: action.py:126
+msgid "The address of the KOReader device is not known. Connect it to calibre wirelessly or set its address in the plugin settings."
+msgstr "No se conoce la dirección del dispositivo con KOReader. Conectalo a calibre por wifi o configurá su dirección en el plugin."
+
+#: action.py:132
+msgid "Syncing KOReader highlights..."
+msgstr "Sincronizando highlights de KOReader..."
+
+#: action.py:138
+msgid "Sync failed"
+msgstr "Falló la sincronización"
+
+#: action.py:138
+msgid "The highlights sync failed"
+msgstr "Falló la sincronización de highlights"
+
+#: action.py:142
+msgid "Preview only, nothing was changed."
+msgstr "Vista previa: no se cambió nada."
+
+#: config.py:50
+msgid "Highlights are read and written over KOReader's SSH server (<i>Tools → More tools → SSH server</i>; enable login without password or add your public key). When the device is connected to calibre wirelessly, its address is detected automatically."
+msgstr "Los highlights se leen y escriben por el servidor SSH de KOReader (<i>Herramientas → Más herramientas → Servidor SSH</i>; activá el inicio de sesión sin contraseña o agregá tu clave pública). Si el dispositivo está conectado a calibre por wifi, su dirección se detecta sola."
+
+#: config.py:54
+msgid "KOReader applies the changes the next time the book is opened on the device."
+msgstr "KOReader aplica los cambios la próxima vez que abrís el libro en el dispositivo."
+
+#: config.py:59
+#, python-brace-format
+msgid "automatic (last: {})"
+msgstr "automática (última: {})"
+
+#: config.py:59
+msgid "none"
+msgstr "ninguna"
+
+#: config.py:60
+msgid "Device &address:"
+msgstr "&Dirección del dispositivo:"
+
+#: config.py:66
+msgid "User:"
+msgstr "Usuario:"
+
+#: config.py:67
+msgid "SSH &port:"
+msgstr "&Puerto SSH:"
+
+#: config.py:69
+msgid "default SSH keys (~/.ssh)"
+msgstr "claves SSH por defecto (~/.ssh)"
+
+#: config.py:70
+msgid "SSH &key file:"
+msgstr "Archivo de &clave SSH:"
+
+#: config.py:72
+msgid "&KOReader folder:"
+msgstr "Carpeta de &KOReader:"
+
+#: config.py:74
+msgid "&Book folders:"
+msgstr "Carpetas de &libros:"
+
+#: config.py:75
+msgid "Sync automatically when the device connects to calibre"
+msgstr "Sincronizar automáticamente cuando el dispositivo se conecta a calibre"
+
+#: config.py:78
+msgid "Show a summary after automatic syncs"
+msgstr "Mostrar un resumen después de las sincronizaciones automáticas"
+
+#: config.py:81
+msgid "Also import from the KOReader Sync plugin column (for books that are not on the device)"
+msgstr "Importar también desde la columna del plugin KOReader Sync (para libros que no están en el dispositivo)"
+
+#: config.py:87
+msgid "C&olumn:"
+msgstr "C&olumna:"
+
+#: config.py:89
+msgid "Book data"
+msgstr "Datos del libro"
+
+#: config.py:90
+msgid "(from KOReader to calibre; empty = do not sync). Values are only written when they change in KOReader, so what you edit by hand in calibre is kept."
+msgstr "(de KOReader a calibre; vacío = no sincronizar). Solo se escriben cuando cambian en KOReader, así que lo que edites a mano en calibre se mantiene."
+
+#: config.py:95
+msgid "e.g. #read (Yes/No column)"
+msgstr "ej. #leido (columna Sí/No)"
+
+#: config.py:96
+msgid "R&ead column:"
+msgstr "Columna de l&eído:"
+
+#: config.py:98
+msgid "e.g. rating"
+msgstr "ej. rating"
+
+#: config.py:99
+msgid "R&ating column:"
+msgstr "Columna de c&alificación:"
+
+#: config.py:101
+msgid "e.g. #ko_review (long text)"
+msgstr "ej. #ko_review (texto largo)"
+
+#: config.py:102
+msgid "&Review column:"
+msgstr "Columna de &reseña:"
+
+#: engine.py:26
+msgid "added"
+msgstr "agregados"
+
+#: engine.py:26
+msgid "updated"
+msgstr "actualizados"
+
+#: engine.py:26
+msgid "deleted"
+msgstr "borrados"
+
+#: engine.py:114
+#, python-brace-format
+msgid "Device: {}"
+msgstr "Dispositivo: {}"
+
+#: engine.py:115
+#, python-brace-format
+msgid "Books synced: {}"
+msgstr "Libros sincronizados: {}"
+
+#: engine.py:121
+msgid "Everything was already in sync"
+msgstr "Todo estaba sincronizado"
+
+#: engine.py:123
+#, python-brace-format
+msgid "Read / rating / review: {} books updated in calibre"
+msgstr "Leído / calificación / reseña: {} libros actualizados en calibre"
+
+#: engine.py:125
+#, python-brace-format
+msgid "Skipped: {} books"
+msgstr "Omitidos: {} libros"
+
+#: engine.py:127
+#, python-brace-format
+msgid "Errors: {}"
+msgstr "Errores: {}"
+
+#: engine.py:135
+#, python-brace-format
+msgid "{0} {1} in {2}"
+msgstr "{0} {1} en {2}"
+
+#: engine.py:140
+#, python-brace-format
+msgid "ERROR {0}: {1}"
+msgstr "ERROR {0}: {1}"
+
+#: engine.py:142
+#, python-brace-format
+msgid "Skipped {0}: {1}"
+msgstr "Omitido {0}: {1}"
+
+#: engine.py:187
+msgid "Device"
+msgstr "Dispositivo"
+
+#: engine.py:204
+#, python-brace-format
+msgid "{0} ({1} books with KOReader data)"
+msgstr "{0} ({1} libros con datos de KOReader)"
+
+#: engine.py:210
+msgid "Settings"
+msgstr "Configuración"
+
+#: engine.py:216
+msgid "not in this calibre library"
+msgstr "no está en esta biblioteca de calibre"
+
+#: engine.py:222
+msgid "open in KOReader: close it and sync again"
+msgstr "está abierto en KOReader: cerralo y volvé a sincronizar"
+
+#: engine.py:257 engine.py:312
+msgid "no EPUB format in calibre"
+msgstr "no tiene formato EPUB en calibre"
+
+#: metadata.py:43
+#, python-brace-format
+msgid "The column {} does not exist"
+msgstr "La columna {} no existe"
+
+#: metadata.py:45
+#, python-brace-format
+msgid "The column {0} is of type {1}, expected {2}"
+msgstr "La columna {0} es de tipo {1}, se esperaba {2}"
+
+#: sync.py:240
+msgid "calibre highlight {0!r}: {1}"
+msgstr "highlight de calibre {0!r}: {1}"
+
+#: sync.py:274
+msgid "KOReader highlight {0!r}: {1}"
+msgstr "highlight de KOReader {0!r}: {1}"

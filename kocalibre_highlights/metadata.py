@@ -5,6 +5,11 @@ in KOReader since the last sync (or on the first sync), so edits made by hand in
 calibre are kept until the value is changed again on the device.
 """
 
+try:
+    load_translations()
+except NameError:
+    pass  # not running as a calibre plugin (tests); calibre-debug provides _()
+
 # setting name -> (sidecar summary key, accepted calibre datatypes)
 FIELDS = {
     'read_column': ('status', ('bool',)),
@@ -35,9 +40,10 @@ def check_columns(field_metadata, prefs):
             continue
         fm = field_metadata.get(col)
         if fm is None:
-            errors.append(f'La columna {col} no existe')
+            errors.append(_('The column {} does not exist').format(col))
         elif fm.get('datatype') not in datatypes:
-            errors.append(f'La columna {col} es de tipo {fm.get("datatype")}, se esperaba {"/".join(datatypes)}')
+            errors.append(_('The column {0} is of type {1}, expected {2}').format(
+                col, fm.get('datatype'), '/'.join(datatypes)))
         else:
             columns[setting] = col
     return columns, errors

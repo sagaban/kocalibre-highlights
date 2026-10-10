@@ -17,6 +17,11 @@ from datetime import datetime, timedelta, timezone
 from .positions import PositionError
 from .styles import calibre_style_to_ko, ko_style_key, ko_to_calibre_style
 
+try:
+    load_translations()
+except NameError:
+    pass  # not running as a calibre plugin (tests); calibre-debug provides _()
+
 KO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 IMPORT_DEVICE_ID = 'calibre-kocalibre-highlights'
 
@@ -232,7 +237,7 @@ class BookSync:
             try:
                 key = self.calibre_key(c)
             except (PositionError, ValueError, KeyError) as e:
-                res.errors.append(f'calibre highlight {c.get("highlighted_text", "")[:40]!r}: {e}')
+                res.errors.append(_('calibre highlight {0!r}: {1}').format(c.get('highlighted_text', '')[:40], e))
                 continue
             if key in cmap:
                 # Duplicate of an existing calibre highlight, keep the newest
@@ -266,7 +271,7 @@ class BookSync:
                     try:
                         annot = self.ko_to_calibre(k, uuid=prev_state.get(key, {}).get('uuid'))
                     except (PositionError, ValueError) as e:
-                        res.errors.append(f'KOReader highlight {k.get("text", "")[:40]!r}: {e}')
+                        res.errors.append(_('KOReader highlight {0!r}: {1}').format(k.get('text', '')[:40], e))
                         continue
                     res.calibre_changes.append(annot)
                     res.state[key] = {'uuid': annot['uuid']}

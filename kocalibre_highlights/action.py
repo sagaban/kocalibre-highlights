@@ -7,6 +7,8 @@ from qt.core import QMenu, QThread, pyqtSignal
 
 from calibre_plugins.kocalibre_highlights.config import DATA_DIR, prefs
 
+load_translations()
+
 
 class SyncWorker(QThread):
 
@@ -33,7 +35,7 @@ class HighlightsSyncAction(InterfaceAction):
 
     name = 'KOReader Highlights Sync'
     action_spec = ('KOReader Highlights', 'highlight.png',
-                   'Sincronizar highlights entre KOReader y el visor de calibre', None)
+                   _('Sync highlights between KOReader and the calibre viewer'), None)
     action_type = 'current'
     dont_add_to = frozenset(('context-menu-device',))
 
@@ -42,18 +44,18 @@ class HighlightsSyncAction(InterfaceAction):
         self.menu = QMenu(self.gui)
         self.qaction.setMenu(self.menu)
         self.qaction.triggered.connect(self.sync_all)
-        self.create_menu_action(self.menu, 'kch-sync-all', 'Sincronizar todos los libros', icon='highlight.png',
+        self.create_menu_action(self.menu, 'kch-sync-all', _('Sync all books'), icon='highlight.png',
                                 triggered=self.sync_all)
-        self.create_menu_action(self.menu, 'kch-sync-selected', 'Sincronizar libros seleccionados', icon='sync.png',
+        self.create_menu_action(self.menu, 'kch-sync-selected', _('Sync selected books'), icon='sync.png',
                                 triggered=self.sync_selected)
-        self.create_menu_action(self.menu, 'kch-preview', 'Vista previa (no cambia nada)', icon='search.png',
+        self.create_menu_action(self.menu, 'kch-preview', _('Preview sync (change nothing)'), icon='search.png',
                                 triggered=self.preview)
-        self.create_menu_action(self.menu, 'kch-column', 'Importar solo desde la columna de KOReader Sync',
+        self.create_menu_action(self.menu, 'kch-column', _('Import from the KOReader Sync column only'),
                                 icon='column.png', triggered=self.import_column)
         self.menu.addSeparator()
-        self.create_menu_action(self.menu, 'kch-backups', 'Abrir carpeta de backups', icon='document_open.png',
+        self.create_menu_action(self.menu, 'kch-backups', _('Open backups folder'), icon='document_open.png',
                                 triggered=self.open_backups)
-        self.create_menu_action(self.menu, 'kch-config', 'Configurar', icon='config.png',
+        self.create_menu_action(self.menu, 'kch-config', _('Configure'), icon='config.png',
                                 triggered=self.show_config)
         device_signals.device_metadata_available.connect(self.on_device_ready)
 
@@ -99,7 +101,7 @@ class HighlightsSyncAction(InterfaceAction):
     def sync_selected(self):
         ids = self.gui.library_view.get_selected_ids()
         if not ids:
-            return error_dialog(self.gui, 'No hay libros seleccionados', 'Seleccioná primero los libros a sincronizar', show=True)
+            return error_dialog(self.gui, _('No books selected'), _('Select the books to sync first'), show=True)
         self.start(book_ids=ids)
 
     def preview(self):
@@ -111,7 +113,7 @@ class HighlightsSyncAction(InterfaceAction):
     def start(self, book_ids=None, silent=False, dry_run=False, use_device=True, use_column=None):
         if self.worker is not None and self.worker.isRunning():
             if not silent:
-                info_dialog(self.gui, 'Sincronización en curso', 'Ya hay una sincronización de highlights en curso', show=True)
+                info_dialog(self.gui, _('Sync running'), _('A highlights sync is already running'), show=True)
             return
         host = self.host() if use_device else None
         if use_device and not host:
@@ -120,24 +122,24 @@ class HighlightsSyncAction(InterfaceAction):
             elif silent:
                 return
             else:
-                return error_dialog(self.gui, 'Sin dispositivo', 'No se conoce la dirección del dispositivo con '
-                                    'KOReader. Conectalo a calibre por wifi o configurá su dirección en el plugin.',
-                                    show=True)
+                return error_dialog(self.gui, _('No device'), _(
+                    'The address of the KOReader device is not known. Connect it to calibre wirelessly '
+                    'or set its address in the plugin settings.'), show=True)
         self.silent, self.dry_run = silent, dry_run
         self.worker = SyncWorker(self.gui, self.gui.current_db.new_api, host, book_ids, use_device,
                                  use_column, dry_run)
         self.worker.done.connect(self.finished)
-        self.gui.status_bar.show_message('Sincronizando highlights de KOReader...', 3000)
+        self.gui.status_bar.show_message(_('Syncing KOReader highlights...'), 3000)
         self.worker.start()
 
     def finished(self, report, exc):
         self.worker = None
         if exc:
-            return error_dialog(self.gui, 'Falló la sincronización', 'Falló la sincronización de highlights',
+            return error_dialog(self.gui, _('Sync failed'), _('The highlights sync failed'),
                                 det_msg=exc, show=True)
         summary = report.summary()
         if self.dry_run:
-            summary = 'Vista previa: no se cambió nada.\n\n' + summary
+            summary = _('Preview only, nothing was changed.') + '\n\n' + summary
         self.gui.status_bar.show_message('KOReader highlights: ' + summary.replace('\n', ' ').strip(), 8000)
         if report.errors or not self.silent:
             info_dialog(self.gui, 'KOReader highlights', summary.replace('\n', '<br>'),

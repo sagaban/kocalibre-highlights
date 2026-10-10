@@ -12,7 +12,7 @@ libro (reemplaza al plugin KOReader Sync para eso).
 ## Instalación
 
 ```sh
-./build.sh
+./build.sh   # necesita msgfmt (GNU gettext) para compilar las traducciones
 ```
 
 Después, en calibre: *Preferencias → Complementos → Cargar complemento desde archivo* →
@@ -88,6 +88,13 @@ estilos personalizados `KOReader <color>`; subrayado y tachado ↔ decoraciones.
 calibre-debug -e tests/test_sync.py
 calibre-debug -e tests/validate_real_data.py -- <carpeta con sidecars> <biblioteca calibre>
 ```
+
+## Traducciones
+
+La interfaz está en inglés, con traducción al español; calibre usa la que coincide con su idioma.
+Las traducciones están en `kocalibre_highlights/translations/<idioma>.po`. Si cambiás textos
+visibles, corré `./i18n.sh` para actualizar la plantilla y fusionarla en cada `.po`; para agregar un
+idioma, copiá `messages.pot` a `<idioma>.po` y traducilo.
 
 ## Licencia
 
