@@ -11,12 +11,15 @@ libro (reemplaza al plugin KOReader Sync para eso).
 
 ## Instalación
 
+Bajá el zip del [último release](https://github.com/sagaban/kocalibre-highlights/releases/latest),
+o armalo vos:
+
 ```sh
 ./build.sh   # necesita msgfmt (GNU gettext) para compilar las traducciones
 ```
 
-Después, en calibre: *Preferencias → Complementos → Cargar complemento desde archivo* →
-`KOReader Highlights Sync.zip`, y reiniciar calibre. Agregá el botón **KOReader Highlights** a la
+Después, en calibre: *Preferencias → Complementos → Cargar complemento desde archivo* → el zip, y
+reiniciar calibre. Agregá el botón **KOReader Highlights** a la
 barra de herramientas si no aparece (*Preferencias → Barras de herramientas y menús*).
 
 En KOReader: *Herramientas → Más herramientas → Servidor SSH*, activado y con login sin contraseña

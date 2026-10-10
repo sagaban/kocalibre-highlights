@@ -11,12 +11,14 @@ it can replace the KOReader Sync plugin for that.
 
 ## Installation
 
+Download the zip from the [latest release](https://github.com/sagaban/kocalibre-highlights/releases/latest),
+or build it yourself:
+
 ```sh
 ./build.sh   # needs msgfmt (GNU gettext) to compile the translations
 ```
 
-Then in calibre: *Preferences → Plugins → Load plugin from file* → `KOReader Highlights Sync.zip`,
-and restart calibre. Add the **KOReader Highlights** button to a toolbar if it doesn't show up
+Then in calibre: *Preferences → Plugins → Load plugin from file* → the zip, and restart calibre. Add the **KOReader Highlights** button to a toolbar if it doesn't show up
 (*Preferences → Toolbars & menus*).
 
 In KOReader: *Tools → More tools → SSH server*, enabled, with login without password or your public
