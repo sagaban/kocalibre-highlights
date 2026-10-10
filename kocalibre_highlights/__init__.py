@@ -1,3 +1,5 @@
+# License: GPL v3 (see LICENSE)
+
 from calibre.customize import InterfaceActionBase
 
 

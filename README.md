@@ -1,86 +1,101 @@
-# KOReader Highlights Sync (plugin de calibre)
+# KOReader Highlights Sync (calibre plugin)
 
-Sincroniza en las dos direcciones los highlights y las notas entre **KOReader** y el **visor de
-calibre** (EPUB). Los highlights de KOReader aparecen como highlights reales al abrir el libro en
-calibre, y los que hacés en calibre aparecen en KOReader.
+*[Leer en español](README.es.md)*
 
-Además pasa de KOReader a calibre el estado **leído**, la **calificación** y la **reseña** de cada
-libro (reemplaza al plugin KOReader Sync para eso).
+Two-way sync of highlights and notes between **KOReader** and the **calibre e-book viewer**
+(EPUB). KOReader highlights show up as real highlights when you open the book in calibre, and the
+ones you make in calibre show up in KOReader.
 
-## Instalación
+It also copies each book's **read status**, **rating** and **review** from KOReader to calibre, so
+it can replace the KOReader Sync plugin for that.
+
+> The plugin's user interface is currently in Spanish.
+
+## Installation
 
 ```sh
 ./build.sh
 ```
 
-Después, en calibre: *Preferencias → Complementos → Cargar complemento desde archivo* →
-`KOReader Highlights Sync.zip`, y reiniciar calibre. Agregá el botón **KOReader Highlights** a la
-barra de herramientas si no aparece (*Preferencias → Barras de herramientas y menús*).
+Then in calibre: *Preferences → Plugins → Load plugin from file* → `KOReader Highlights Sync.zip`,
+and restart calibre. Add the **KOReader Highlights** button to a toolbar if it doesn't show up
+(*Preferences → Toolbars & menus*).
 
-En KOReader: *Herramientas → Más herramientas → Servidor SSH*, activado y con login sin contraseña
-o tu clave pública en `koreader/settings/SSH/authorized_keys`.
+In KOReader: *Tools → More tools → SSH server*, enabled, with login without password or your public
+key in `koreader/settings/SSH/authorized_keys`.
 
-## Uso
+The defaults (`/mnt/us/books`, `/mnt/us/documents`, `/mnt/us/koreader`) are for a Kindle; change
+them in the plugin settings for other devices.
 
-- **Al conectar el Kindle a calibre por wifi** la sync corre sola (configurable).
-- Botón / menú: *Sincronizar todos*, *Sincronizar seleccionados*, *Vista previa* (no cambia nada),
-  *Importar solo desde la columna* (libros que ya no están en el Kindle).
+## Usage
 
-KOReader aplica los cambios **la próxima vez que abrís el libro** en el Kindle.
+- **When the device connects to calibre wirelessly** the sync runs automatically (configurable).
+  The device's address is taken from that connection, or can be set in the settings.
+- Button / menu: *sync all books*, *sync selected books*, *preview* (changes nothing), *import from
+  the KOReader Sync column only* (for books no longer on the device).
 
-Los libros que están **abiertos en KOReader** en el momento de la sync se saltean: mientras un libro
-está abierto, KOReader tiene sus anotaciones en memoria y el sidecar en disco está desactualizado.
-Cerralo (volvé a la biblioteca) y sincronizá de nuevo.
+KOReader applies changes **the next time you open the book** on the device.
 
-### Leído, calificación y reseña
+Books that are **open in KOReader** during a sync are skipped: while a book is open KOReader keeps
+its annotations in memory and the sidecar on disk is out of date. Close it (go back to the file
+browser) and sync again.
 
-Se configuran en el plugin las columnas destino (por defecto, las mismas que tenía KOReader Sync):
+### Read status, rating and review
 
-| KOReader (`summary` del sidecar) | calibre |
+The target columns are set in the plugin settings (by default, the ones configured in KOReader
+Sync):
+
+| KOReader (sidecar `summary`) | calibre |
 |---|---|
-| estado `complete` / otro | columna Sí/No (ej. `#leido`) |
-| calificación 1–5 estrellas | columna de calificación (ej. `rating`) |
-| reseña | columna de texto largo (ej. `#ko_review`) |
+| status `complete` / other | Yes/No column (e.g. `#read`) |
+| rating, 1–5 stars | rating column (e.g. `rating`) |
+| review | long text column (e.g. `#ko_review`) |
 
-Solo va de KOReader a calibre, y un valor se escribe solo cuando **cambió en KOReader** desde la
-última sync: lo que edites a mano en calibre se mantiene hasta que lo cambies en el Kindle.
+This goes only from KOReader to calibre, and a value is written only when it **changed in
+KOReader** since the last sync, so edits you make by hand in calibre are kept until you change the
+value on the device.
 
-## Cómo funciona
+## How it works
 
 | | KOReader | calibre |
 |---|---|---|
-| Dónde | `libro.sdr/metadata.epub.lua` | tabla `annotations` de `metadata.db` |
-| Posición | XPointer `/body/DocFragment[15]/body/p[72]/text().120` | `spine_index` + CFI `/2/4/144/1:120` |
+| Where | `book.sdr/metadata.epub.lua` | `annotations` table in `metadata.db` |
+| Position | XPointer `/body/DocFragment[15]/body/p[72]/text().120` | `spine_index` + CFI `/2/4/144/1:120` |
 
-- `positions.py` convierte XPointer ↔ CFI leyendo el HTML del EPUB, emulando a crengine (índices
-  por nombre de tag, espacios colapsados, DocFragment = ítem XHTML del spine en orden OPF) y al
-  `cfi.pyj` de calibre (offsets desde el primer nodo de texto del padre, spine con los ítems no
-  lineales al final, aserciones `[id]`, UTF-16).
-- Para escribir en KOReader no se toca el sidecar: se deja `libro.sdr/libro.epub.annotations.lua`,
-  el mecanismo de importación propio de KOReader (`ReaderAnnotation:importAnnotations`), que lo
-  fusiona al abrir el libro. Así no hay riesgo de que KOReader pise los cambios si el libro está
-  abierto.
-- En calibre se usa `merge_annotations_for_book`; los borrados son lápidas (`removed: true`), igual
-  que hace el visor.
-- **Borrados:** el estado de la última sync (`state/<library_id>.json` en la carpeta de datos del
-  plugin) distingue "lo borré en un lado" de "lo creé en el otro".
-- **Ediciones** (nota, color): gana la más reciente.
-- Antes de cada cambio se guarda un backup (sidecar + anotaciones de calibre) en
-  `~/Library/Preferences/calibre/plugins/KOReader Highlights Sync data/backups`.
+- `positions.py` converts XPointer ↔ CFI by reading the EPUB's HTML. It emulates crengine
+  (element indices by tag name, collapsed whitespace, DocFragment = XHTML spine item in OPF order)
+  and calibre's `cfi.pyj` (text offsets from the parent's first text node, spine with non-linear
+  items last, `[id]` assertions, UTF-16 offsets).
+- Writes to KOReader never touch the sidecar. The plugin leaves a
+  `book.sdr/book.epub.annotations.lua` file, KOReader's own import mechanism
+  (`ReaderAnnotation:importAnnotations`), which merges it when the book is opened.
+- calibre is updated with `merge_annotations_for_book`. Deletions are tombstones
+  (`removed: true`), the same way the viewer does it.
+- **Deletions:** the state saved at the end of the last sync (`state/<library_id>.json` in the
+  plugin's data folder) tells "deleted on one side" apart from "created on the other".
+- **Edits** (note, color): the most recent one wins.
+- Before any change, a backup (sidecar + calibre annotations) is saved in the plugin's data folder,
+  under `backups` (on macOS: `~/Library/Preferences/calibre/plugins/KOReader Highlights Sync data`).
 
-Colores: amarillo/verde/azul/rojo/morado ↔ estilos nativos de calibre; gris/naranja/oliva/cian ↔
-estilos personalizados `KOReader <color>`; subrayado y tachado ↔ decoraciones.
+Colors: yellow/green/blue/red/purple ↔ calibre's builtin styles; gray/orange/olive/cyan ↔ custom
+styles named `KOReader <color>`; underline and strikeout ↔ decorations.
 
-## Limitaciones
+## Limitations
 
-- Solo EPUB (el visor de calibre no muestra highlights de PDF).
-- Highlights que cruzan dos archivos del EPUB no se pasan a calibre.
-- Los libros se emparejan por el `uuid` de calibre: tienen que haberse enviado desde calibre.
-- Los highlights nuevos de calibre no se escriben en libros que nunca se abrieron en KOReader.
+- EPUB only (the calibre viewer doesn't show highlights for PDFs).
+- Highlights that span two files of the EPUB are not copied to calibre.
+- Books are matched by their calibre `uuid`, so they must have been sent from calibre.
+- New calibre highlights are not written for books that were never opened in KOReader.
+- Only KOReader's "book folder" and "koreader/docsettings" metadata locations are supported (not
+  "hash").
 
 ## Tests
 
 ```sh
 calibre-debug -e tests/test_sync.py
-calibre-debug -e tests/validate_real_data.py -- <carpeta con sidecars> <biblioteca calibre>
+calibre-debug -e tests/validate_real_data.py -- <folder with sidecars> <calibre library>
 ```
+
+## License
+
+[GPL v3](LICENSE)
